@@ -1,0 +1,15 @@
+{
+  "extends": [
+    "config:base",
+    "schedule:weekly",
+    ":disableDependencyDashboard"
+  ],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "force": {
+    "constraints": {
+      "go": "1.18"
+    }
+  }
+}
