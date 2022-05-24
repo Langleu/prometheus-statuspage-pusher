@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,12 +31,12 @@ var statuspageTimes = promauto.NewHistogram(prometheus.HistogramOpts{
 })
 
 var (
-	prometheusURL    = flag.String("prom", "http://localhost:9090", "URL of Prometheus server")
-	statusPageAPIKey = flag.String("apikey", "", "Statuspage API key")
-	statusPageID     = flag.String("pageid", "", "Statuspage page ID")
-	queryConfigFile  = flag.String("config", "queries.yaml", "Query config file")
-	metricInterval   = flag.Duration("interval", 300*time.Second, "Metric push interval")
-	logLevel         = flag.String("log-level", "info", "Log level accepted by Logrus, for example, \"error\", \"warn\", \"info\", \"debug\", ...")
+	prometheusURL    = getEnvOrFlag("prom", "http://localhost:9090", "URL of Prometheus server")
+	statusPageAPIKey = getEnvOrFlag("apikey", "", "Statuspage API key")
+	statusPageID     = getEnvOrFlag("pageid", "", "Statuspage page ID")
+	queryConfigFile  = getEnvOrFlag("config", "queries.yaml", "Query config file")
+	metricInterval   = getEnvOrFlag("interval", "300s", "Metric push interval")
+	logLevel         = getEnvOrFlag("loglevel", "info", "Log level accepted by Logrus, for example, \"error\", \"warn\", \"info\", \"debug\", ...")
 
 	httpClient = &http.Client{
 		Timeout: 30 * time.Second,
@@ -42,6 +44,15 @@ var (
 
 	queryConfig map[string]string
 )
+
+func getEnvOrFlag(val string, def string, descr string) *string {
+	key, ok := os.LookupEnv(strings.ToUpper(val))
+	if ok {
+		return &key
+	} else {
+		return flag.String(val, def, descr)
+	}
+}
 
 func healthz(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(200)
@@ -56,6 +67,13 @@ func main() {
 		log.SetLevel(lvl)
 	}
 
+	parsedInterval, err := time.ParseDuration(*metricInterval)
+	if err != nil {
+		log.Fatalf("Couldn't parse interval value: %s", err)
+	}
+
+	log.Debugf("Following values are set: %s, %s, %s, %s, %s", *prometheusURL, *statusPageAPIKey, *statusPageID, *queryConfigFile, parsedInterval)
+
 	qcd, err := ioutil.ReadFile(*queryConfigFile)
 	if err != nil {
 		log.Fatalf("Couldn't read config file: %s", err)
@@ -68,7 +86,7 @@ func main() {
 	http.HandleFunc("/healthz", healthz)
 	go http.ListenAndServe(":8080", nil)
 
-	ticker := time.NewTicker(*metricInterval)
+	ticker := time.NewTicker(parsedInterval)
 	for {
 		select {
 		case <-ticker.C:
