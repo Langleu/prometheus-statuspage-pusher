@@ -16,10 +16,12 @@ Usage of ./prometheus-statuspage-pusher:
     	Statuspage page ID
   -config string
     	Query config file (default: "queries.yaml")
-  -interval duration
-    	Metric push interval (default: 300s)
-  -log-level string
+  -interval string
+    	Metric push interval (default: 300s / 5m)
+  -loglevel string
     	Log level accepted by Logrus, for example, "error", "warn", "info", "debug", ... (default: "info")
+
+Alternatively, you can use environment variables instead, e.g. PROM, APIKEY, PAGEID, ...
 ```
 
 ## Config:
