@@ -69,7 +69,7 @@ func queryInstant(api prometheus.API, query string, logger *log.Entry) ([]Status
 	value := vec[0].Value
 	logger.Infof("Query result: %s", value)
 
-	status := "operational"
+	var status string
 
 	if value == 1 {
 		status = "operational"
