@@ -52,7 +52,6 @@ func queryPrometheus() componentStatus {
 func queryInstant(api prometheus.API, query string, logger *log.Entry) ([]Status, prometheus.Warnings, error) {
 	now := time.Now()
 	response, warnings, err := api.Query(context.Background(), query, now)
-
 	if err != nil {
 		return nil, warnings, fmt.Errorf("Couldn't query Prometheus: %w", err)
 	}

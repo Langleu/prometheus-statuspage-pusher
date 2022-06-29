@@ -20,7 +20,7 @@ lint:
 	golangci-lint run
 
 format:
-	go fmt
+	gofumpt -l -w .
 
 verify-goreleaser:
 ifeq (, $(shell which goreleaser))
