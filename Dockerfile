@@ -7,7 +7,7 @@ ENV CGO_ENABLED=0
 
 RUN go build -o prometheus-statuspage-pusher .
 
-FROM alpine:3.15
+FROM alpine:3.16
 
 COPY --from=builder /src/prometheus-statuspage-pusher /usr/bin/prometheus-statuspage-pusher
 ENTRYPOINT [ "/usr/bin/prometheus-statuspage-pusher" ]
