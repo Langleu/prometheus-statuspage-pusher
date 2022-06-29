@@ -16,6 +16,12 @@ untag:
 	git push origin :refs/tags/$(TAG)
 	curl --request DELETE --header "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/whyeasy/prometheus-statuspage-pusher/releases/:release_id/$(TAG)"
 
+lint:
+	golangci-lint run
+
+format:
+	gofumpt -l -w .
+
 verify-goreleaser:
 ifeq (, $(shell which goreleaser))
 	$(error "No goreleaser in $(PATH), consider installing it from https://goreleaser.com/install")

@@ -25,11 +25,6 @@ var prometheusTimes = promauto.NewHistogram(prometheus.HistogramOpts{
 	Help: "The response times of prometheus requests",
 })
 
-var statuspageTimes = promauto.NewHistogram(prometheus.HistogramOpts{
-	Name: "statuspage_pusher_statuspage_requests",
-	Help: "The response times of statuspage.io requests",
-})
-
 var (
 	prometheusURL    = getEnvOrFlag("prom", "http://localhost:9090", "URL of Prometheus server")
 	statusPageAPIKey = getEnvOrFlag("apikey", "", "Statuspage API key")
@@ -84,14 +79,16 @@ func main() {
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/healthz", healthz)
-	go http.ListenAndServe(":8080", nil)
+
+	// serve http in goroutine to unblock query and push
+	go func() {
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
 
 	ticker := time.NewTicker(parsedInterval)
 	for {
-		select {
-		case <-ticker.C:
-			go queryAndPush()
-		}
+		<-ticker.C
+		go queryAndPush()
 	}
 }
 
@@ -104,7 +101,7 @@ func queryAndPush() {
 	prometheusTimes.Observe(time.Since(start).Seconds())
 
 	for id, val := range metrics {
-		pushStatuspage(id, val[0])
+		_ = pushStatuspage(id, val[0])
 	}
 
 	log.Infof("Finished querying and pushing metrics")
