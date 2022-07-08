@@ -22,6 +22,10 @@ lint:
 format:
 	gofumpt -l -w .
 
+coverage:
+	go test -coverprofile cover.out
+	go tool cover -html=cover.out -o cover.html
+
 verify-goreleaser:
 ifeq (, $(shell which goreleaser))
 	$(error "No goreleaser in $(PATH), consider installing it from https://goreleaser.com/install")

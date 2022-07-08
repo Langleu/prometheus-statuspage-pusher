@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -50,7 +53,7 @@ var _ = Describe("Main", func() {
 			})
 		})
 
-		Context("Flags", func() {
+		Context("Default Flags", func() {
 			BeforeEach(func() {
 				os.Unsetenv("PROM")
 				os.Unsetenv("APIKEY")
@@ -82,6 +85,55 @@ var _ = Describe("Main", func() {
 
 			It("returns the default loglevel flag", func() {
 				Expect(*logLevel).To(Equal("info"))
+			})
+		})
+
+		Context("HTTP checks", func() {
+			defaultURL := "http://localhost:8080"
+			running := false
+
+			BeforeEach(func() {
+				if running == false {
+					go main()
+					running = true
+				}
+			})
+
+			It("should return healthz", func() {
+				requestURL := fmt.Sprintf("%s/healthz", defaultURL)
+				res, err := http.Get(requestURL)
+				Expect(err).Should(BeNil())
+				Expect(res.StatusCode).Should(Equal(200))
+
+				resBody, err := ioutil.ReadAll(res.Body)
+				Expect(err).Should(BeNil())
+				Expect(resBody).Should(ContainSubstring("OK"))
+			})
+
+			It("should return metrics", func() {
+				requestURL := fmt.Sprintf("%s/metrics", defaultURL)
+				res, err := http.Get(requestURL)
+				Expect(err).Should(BeNil())
+				Expect(res.StatusCode).Should(Equal(200))
+
+				resBody, err := ioutil.ReadAll(res.Body)
+				Expect(err).Should(BeNil())
+				Expect(resBody).Should(ContainSubstring("A summary of the pause duration of garbage collection cycles."))
+			})
+		})
+	})
+})
+
+var _ = Describe("Prometheus and StatusPage", func() {
+	When("running", func() {
+		Context("Query Prometheus", func() {
+			It("should be able to query Prometheus", func() {
+				status := queryPrometheus()
+				Expect(status).ShouldNot(BeEmpty())
+			})
+
+			It("should be able to query and push", func() {
+				queryAndPush()
 			})
 		})
 	})
