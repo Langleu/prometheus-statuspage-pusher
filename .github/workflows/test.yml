@@ -1,0 +1,29 @@
+name: test
+on:
+  push:
+    branches:
+    - '*'
+  pull_request:
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-20.04
+    services:
+      prometheus:
+        image: prom/prometheus:latest
+        ports:
+        - 9090:9090
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v3
+      with:
+        go-version-file: ./go.mod
+    - name: Sleep for 30 seconds # grant prometheus time to collect some metrics
+      run: sleep 30s
+      shell: bash
+    - name: run tests
+      run: make coverage
+    - uses: actions/upload-artifact@v3
+      with:
+        name: coverage
+        path: cover.html
